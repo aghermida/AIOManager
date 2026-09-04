@@ -1,0 +1,81 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-and-build-main
+  cancel-in-progress: false
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync fork with upstream
+        run: |
+          # Paths this fork deletes on purpose even though upstream still
+          # maintains them. Upstream editing one of these produces a
+          # modify/delete conflict on every sync unless we resolve it here
+          # by keeping the deletion. See AIOStreams/aiometadata forks for
+          # the same convention.
+          FORK_DELETED_UPSTREAM_FILES=(
+            ".github/workflows/docker-publish.yml" # replaced by this file's own sync+build+push job
+          )
+
+          git remote add upstream https://github.com/Sonicx161/AIOManager.git
+          git fetch upstream
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git merge upstream/main --no-edit; then
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            resolvable=true
+            for f in "${conflicts[@]}"; do
+              known=false
+              for d in "${FORK_DELETED_UPSTREAM_FILES[@]}"; do
+                [ "$f" = "$d" ] && known=true && break
+              done
+              if [ "$known" = true ]; then
+                git rm -f "$f"
+              else
+                resolvable=false
+              fi
+            done
+
+            if [ "$resolvable" = true ] && [ "${#conflicts[@]}" -gt 0 ]; then
+              git commit --no-edit
+            else
+              git merge --abort
+              echo "::error::Merge conflict syncing upstream/main into main. Resolve manually and merge via PR."
+              exit 1
+            fi
+          fi
+          git push origin main
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/aghermida/aiomanager:latest
