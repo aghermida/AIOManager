@@ -836,6 +836,17 @@ fastify.post('/api/sync/:id', {
     // Check existing
     const row = await db.get('SELECT password FROM kv_store WHERE key = $1', [id])
 
+    // [FORK-90001] Single-account limit: this instance only allows one account
+    // total. Reject claiming a brand-new id once any account already exists;
+    // updates to an existing id (row above is truthy) are unaffected.
+    if (!row) {
+        const { count } = await db.get('SELECT COUNT(*) as count FROM kv_store')
+        if (Number(count) >= 1) {
+            reply.status(403)
+            return { error: 'This instance is limited to a single account. Delete the existing account first.' }
+        }
+    }
+
     // SERVER-SIDE TIMESTAMPING (Single Source of Truth)
     const serverTime = new Date().toISOString()
     data.syncedAt = serverTime
