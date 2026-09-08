@@ -1,9 +1,10 @@
-name: Build and Push Docker Image
+name: Sync main with upstream
 
+# main is a secondary/reserve branch: kept up to date with upstream/main but
+# not built or deployed. The fork tracks and deploys from `beta` instead —
+# see .github/workflows/docker.yml on the beta branch for the build+push
+# automation, and CLAUDE.md for why.
 on:
-  push:
-    branches:
-      - main
   schedule:
     # 05:00 Europe/Madrid. GitHub Actions cron is UTC-only (no DST), so this
     # is 03:00 UTC while Madrid is on CEST (UTC+2) and needs bumping to
@@ -12,20 +13,20 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: sync-and-build-main
+  group: sync-main
   cancel-in-progress: false
 
 jobs:
-  sync-and-build:
+  sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Sync fork with upstream
@@ -36,7 +37,7 @@ jobs:
           # by keeping the deletion. See AIOStreams/aiometadata forks for
           # the same convention.
           FORK_DELETED_UPSTREAM_FILES=(
-            ".github/workflows/docker-publish.yml" # replaced by this file's own sync+build+push job
+            ".github/workflows/docker-publish.yml" # replaced by beta's own sync+build+push job
           )
 
           git remote add upstream https://github.com/Sonicx161/AIOManager.git
@@ -68,17 +69,3 @@ jobs:
             fi
           fi
           git push origin main
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/aghermida/aiomanager:latest
