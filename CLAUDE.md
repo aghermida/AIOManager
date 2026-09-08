@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AIOManager is a personal fork of [`Sonicx161/AIOManager`](https://github.com/Sonicx161/AIOManager), a self-hosted "one manager to rule them all" for Stremio (linked accounts, addon library, Autopilot failover, encrypted key vault, Replay sharing). It's a single Node process: a Fastify backend (`server/index.js`, one file) serves both the JSON API and the built Vite/React SPA (`dist/`). The client is Zero-Knowledge — all encryption happens in the browser via Web Crypto (`src/lib/crypto.ts`); the server only ever stores encrypted blobs, in SQLite (`better-sqlite3`, default) or Postgres (`DATABASE_URL` + `DB_TYPE=postgres`), and re-encrypts each blob at rest with its own `ENCRYPTION_KEY`.
 
-This fork is deployed at `aiomanager.sandokan.dev` — see "Deployment" below.
+**`main` is a secondary/reserve branch — not deployed.** This fork tracks and deploys from the `beta` branch (upstream's actively-developed pre-release channel, v2.0.0+); `main` is kept in sync with `upstream/main` on a schedule but no longer built or published. See `beta`'s own `CLAUDE.md` for the canonical, up-to-date guidance — this file describes the older v1.8.x layout that still lives here.
+
+This fork is deployed at `aiomanager.sandokan.dev`, built from `beta` — see "Deployment" below.
 
 ## Commands
 
@@ -27,7 +29,7 @@ This fork is deployed at `aiomanager.sandokan.dev` — see "Deployment" below.
 
 ## Fork sync conventions (read before touching `.github/workflows/` or deleting/renaming any file)
 
-This repo is a personal fork of [`Sonicx161/AIOManager`](https://github.com/Sonicx161/AIOManager). `.github/workflows/docker.yml` merges `upstream/main` into `main` on every push, daily at 05:00 Europe/Madrid (cron), and on manual dispatch, then pushes the result and builds/publishes `ghcr.io/aghermida/aiomanager:latest`. For this automation to keep working with **zero manual intervention**, the merge must apply cleanly every time — it only ever fails when a fork-only change touches something upstream is still actively evolving on its own.
+This repo is a personal fork of [`Sonicx161/AIOManager`](https://github.com/Sonicx161/AIOManager). On `main`, `.github/workflows/docker.yml` only merges `upstream/main` into `main` daily at 05:00 Europe/Madrid (cron) and on manual dispatch — it no longer builds or publishes a Docker image; that now happens from `beta`'s own `docker.yml`, which builds/publishes `ghcr.io/aghermida/aiomanager:latest`. For this automation to keep working with **zero manual intervention**, the merge must apply cleanly every time — it only ever fails when a fork-only change touches something upstream is still actively evolving on its own.
 
 The sister repos `AIOStreams` and `aiometadata` (same fork-of-upstream setup) hit exactly this: they'd deleted CI workflow files upstream kept modifying, so every nightly/weekly sync produced a `modify/delete` conflict and failed repeatedly until `FORK_DELETED_UPSTREAM_FILES` was introduced (see their `CLAUDE.md`s). Follow the same rules here, for any file:
 
