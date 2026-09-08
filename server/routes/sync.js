@@ -11,6 +11,7 @@ import { listStremioCredentialedAccountIds } from '../lib/stremio-credentials.js
 import { hashSyncPassword, isScryptHash, verifySyncPassword, upgradeLegacyPasswordHash } from '../lib/sync-password.js'
 import { isRegistrationsClosed } from '../config.js'
 import { trace } from '../utils/trace.js'
+import { rejectIfSingleAccountLimitReached } from '../fork-single-account-limit.js' // [FORK-ONLY: single-account-limit]
 
 function buildMultiRowPlaceholders(numRows, numCols) {
     const rows = []
@@ -320,6 +321,8 @@ export function registerSyncRoutes(fastify) {
                     reply.status(403);
                     return { error: 'Registrations are closed on this instance.' }
                 }
+                const limitError = await rejectIfSingleAccountLimitReached(tx, reply) // [FORK-ONLY: single-account-limit]
+                if (limitError) return limitError
                 const encryptedVal = encrypt(storedStr, PRIMARY_KEY)
                 const hashedPass = precomputedHashedPass
                 await tx.run(`
