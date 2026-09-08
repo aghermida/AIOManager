@@ -10,6 +10,8 @@ AIOManager is a personal fork of [`Sonicx161/AIOManager`](https://github.com/Son
 
 This fork is deployed at `aiomanager.sandokan.dev` — see "Deployment" below.
 
+**Product/user-facing docs live in `Docs/AIOManager-Guide.md`** — a condensed Spanish-language summary of upstream's own kronorium docs site (accounts, addons, Library, Autopilot, Cloud Sync, Key Vault, Connections/Hydra, REST API), separate from this file's architecture/fork-sync focus. It describes upstream's generic product, not this fork's specific deployment. `Docs/Desactualizaciones.md` lists spots where that upstream doc site is stale against the actual codebase.
+
 ## Commands
 
 - `npm install` (root) and `cd server && npm install` — two separate `package.json`s, client and server
