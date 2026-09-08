@@ -9,7 +9,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs'
 import { encrypt, decrypt, generateRandomKey } from './crypto.js'
-import { rejectIfSingleAccountLimitReached } from './fork-single-account-limit.js' // [FORK-90001]
+import { rejectIfSingleAccountLimitReached } from './fork-single-account-limit.js' // [FORK-ONLY: single-account-limit]
 // let LZString import removed - obsolete
 
 let PRIMARY_KEY = process.env.ENCRYPTION_KEY
@@ -838,7 +838,7 @@ fastify.post('/api/sync/:id', {
     const row = await db.get('SELECT password FROM kv_store WHERE key = $1', [id])
 
     if (!row) {
-        const limitError = await rejectIfSingleAccountLimitReached(db, reply) // [FORK-90001]
+        const limitError = await rejectIfSingleAccountLimitReached(db, reply) // [FORK-ONLY: single-account-limit]
         if (limitError) return limitError
     }
 
