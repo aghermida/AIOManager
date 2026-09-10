@@ -5,11 +5,11 @@ name: Sync main with upstream
 # see .github/workflows/docker.yml on the beta branch for the build+push
 # automation, and CLAUDE.md for why.
 on:
-  schedule:
-    # 05:00 Europe/Madrid. GitHub Actions cron is UTC-only (no DST), so this
-    # is 03:00 UTC while Madrid is on CEST (UTC+2) and needs bumping to
-    # '0 4 * * *' once Madrid switches back to CET (UTC+1) in late October.
-    - cron: '0 3 * * *'
+  # Automatic sync (schedule) disabled 2026-09-10: the fork as a whole is
+  # dormant now (see beta's CLAUDE.md) — aiomanager.sandokan.dev runs
+  # upstream's own image directly, and main was never deployed anyway, so
+  # there's no reason left to keep auto-merging upstream/main into it. Kept
+  # as workflow_dispatch only, in case this branch is ever needed again.
   workflow_dispatch:
 
 concurrency:
